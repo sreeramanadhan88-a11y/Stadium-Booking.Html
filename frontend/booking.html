@@ -1,0 +1,292 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stadium Seat Booking</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <style>
+        body {
+            background: #f4f6f9;
+        }
+
+        .stadium {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+            overflow-x: auto;
+        }
+
+        .side-title {
+            font-weight: 700;
+            margin: 12px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .seat {
+            width: 43px;
+            height: 38px;
+            margin: 4px;
+            border: none;
+            border-radius: 7px;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .seat.available {
+            background: #198754;
+        }
+
+        .seat.available:hover {
+            background: #146c43;
+            transform: scale(1.08);
+        }
+
+        .seat.booked {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .seat.selected {
+            background: #0d6efd;
+        }
+
+        .seat:disabled {
+            opacity: 0.65;
+        }
+
+        .seat-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .stadium-field {
+            min-height: 170px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: #d9f0df;
+            border: 3px solid #198754;
+            border-radius: 50%;
+            margin: 18px 0;
+            padding: 20px;
+            color: #146c43;
+            font-weight: bold;
+        }
+
+        .side-columns {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 576px) {
+            .side-columns {
+                grid-template-columns: 1fr;
+            }
+
+            .seat {
+                width: 38px;
+                height: 34px;
+                margin: 3px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    
+<nav class="navbar navbar-dark bg-dark shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="index.html">
+            🏟️ Stadium Arena Booking
+        </a>
+
+        <a href="login page.html" class="btn btn-outline-light">
+            🏠 Logout
+        </a>
+    </div>
+</nav>
+
+
+    <main class="container my-4">
+        <div id="event-info-header" class="text-center mb-4">
+            <h2>Stadium Seat Selection</h2>
+            <p>Loading schedule...</p>
+        </div>
+
+        <div class="stadium">
+            <div class="text-center">
+                <h5 class="side-title">Top Side</h5>
+                <div id="top-seats" class="seat-row"></div>
+            </div>
+
+            <div class="side-columns mt-3">
+                <div class="text-center">
+                    <h5 class="side-title">Left Side</h5>
+                    <div id="left-seats" class="seat-row"></div>
+                </div>
+
+                <div class="text-center">
+                    <h5 class="side-title">Right Side</h5>
+                    <div id="right-seats" class="seat-row"></div>
+                </div>
+            </div>
+
+            <div class="stadium-field">
+                STADIUM FIELD / STAGE
+            </div>
+
+            <div class="text-center">
+                <h5 class="side-title">Bottom Side</h5>
+                <div id="bottom-seats" class="seat-row"></div>
+            </div>
+
+            <hr>
+
+            <div class="d-flex flex-wrap justify-content-center gap-3 small">
+                <span><span class="badge bg-success">&nbsp;</span> Available</span>
+                <span><span class="badge bg-secondary">&nbsp;</span> Booked</span>
+            </div>
+
+            <p id="seat-message" class="text-center text-muted mt-3"></p>
+        </div>
+
+        <div class="text-center mt-3">
+            <p class="text-muted">
+                Select an available seat to continue to payment.
+            </p>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const scheduleId = params.get("schedule_id");
+
+        const API_BASE = "http://127.0.0.1:8000/api";
+        const SCHEDULE_API = `${API_BASE}/schedules/${scheduleId}/`;
+        const SEATS_API = `${API_BASE}/schedules/${scheduleId}/seats/`;
+
+        const sideContainers = {
+            top: document.getElementById("top-seats"),
+            bottom: document.getElementById("bottom-seats"),
+            left: document.getElementById("left-seats"),
+            right: document.getElementById("right-seats")
+        };
+
+        async function loadBookingPage() {
+            if (!scheduleId) {
+                document.getElementById("event-info-header").innerHTML =
+                    '<p class="text-danger">Missing schedule ID. Open this page using booking.html?schedule_id=2</p>';
+                document.getElementById("seat-message").textContent =
+                    "Please return to the events page and select a schedule.";
+                return;
+            }
+
+            try {
+                const [scheduleResponse, seatsResponse] = await Promise.all([
+                    axios.get(SCHEDULE_API),
+                    axios.get(SEATS_API)
+                ]);
+
+                const schedule = scheduleResponse.data;
+                const seats = seatsResponse.data;
+
+                document.getElementById("event-info-header").innerHTML = `
+                    <h2 class="fw-bold">Choose Your Stadium Seat</h2>
+                    <p class="text-muted mb-1">
+                        Schedule ID: ${schedule.id}
+                    </p>
+                    <h5 class="text-success">
+                        Regular Ticket: ₹${Number(schedule.regular_price).toFixed(2)}
+                    </h5>
+                `;
+
+                renderSeats(seats);
+            } catch (error) {
+                console.error(error);
+                document.getElementById("seat-message").textContent =
+                    "Unable to load seats. Check your Django server and schedule ID.";
+            }
+        }
+
+        function renderSeats(seats) {
+            Object.values(sideContainers).forEach(container => {
+                container.innerHTML = "";
+            });
+
+            const sideCounts = {
+                top: 0,
+                bottom: 0,
+                left: 0,
+                right: 0
+            };
+
+            seats.forEach(seat => {
+                const side = seat.side;
+
+                // Ignore legacy seats that do not belong to the new layout
+                if (!sideContainers[side]) return;
+
+                sideCounts[side]++;
+
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = `seat ${seat.is_booked ? "booked" : "available"}`;
+                button.textContent = seat.seat_number;
+                button.title = seat.is_booked
+                    ? `${seat.seat_number} — Booked`
+                    : `${seat.seat_number} — Available`;
+                button.disabled = seat.is_booked;
+
+                if (!seat.is_booked) {
+                    button.addEventListener("click", () => {
+                        goToPayment(seat);
+                    });
+                }
+
+                sideContainers[side].appendChild(button);
+            });
+
+            const incompleteSide = Object.entries(sideCounts)
+                .filter(([side, count]) => count !== 20);
+
+            if (incompleteSide.length) {
+                document.getElementById("seat-message").textContent =
+                    "Some sides do not have 20 seats. Check your seat data in Django.";
+            } else {
+                document.getElementById("seat-message").textContent =
+                    "80 seats available across the four stadium sides.";
+            }
+        }
+
+        function goToPayment(seat) {
+            const paymentUrl = new URL("payment.html", window.location.href);
+
+            paymentUrl.searchParams.set("schedule_id", scheduleId);
+            paymentUrl.searchParams.set("seat_id", seat.id);
+            paymentUrl.searchParams.set("seat", seat.seat_number);
+
+            window.location.href = paymentUrl.toString();
+        }
+
+        loadBookingPage();
+    </script>
+</body>
+</html>

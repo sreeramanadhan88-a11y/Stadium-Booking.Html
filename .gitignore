@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Local database
+*.sqlite3
+
+# User-uploaded media
+media/
+event_banners/
+
+# Node.js dependencies
+node_modules/
+
+# Editor and OS files
+.vscode/
+.DS_Store
+Thumbs.db
